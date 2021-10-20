@@ -1,0 +1,39 @@
+version: '3.4'
+
+x-logging:
+  &default-logging
+  driver: fluentd
+  options:
+    fluentd-address: localhost:24224
+    tag: "log.{{.Name}}"
+
+services:
+  fluentd:
+    build: ./fluentd
+
+    volumes:
+      - ./fluentd/fluentd.conf:/fluentd/etc/fluentd.conf:ro
+
+    ports:
+      - 24224:24224
+
+    environment:
+      FLUENTD_CONF: fluentd.conf
+
+  elasticsearch:
+    build: .
+    #image: elasticsearch:7.14.1
+
+    depends_on:
+      - fluentd
+    logging: *default-logging
+
+  kibana:
+    image: kibana:7.14.1
+
+    ports:
+      - 5601:5601
+
+    depends_on:
+      - elasticsearch
+    logging: *default-logging
